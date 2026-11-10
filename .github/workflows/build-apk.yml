@@ -43,7 +43,14 @@ jobs:
             exit 1
           fi
           echo "Using: $SDKMANAGER"
-          yes | "$SDKMANAGER" --licenses >/dev/null
+          set +o pipefail
+yes | "$SDKMANAGER" --licenses
+LICENSE_STATUS=${PIPESTATUS[1]}
+set -o pipefail
+
+if [ "$LICENSE_STATUS" -ne 0 ]; then
+  exit "$LICENSE_STATUS"
+fi
           "$SDKMANAGER" --install \
             "platforms;android-35" \
             "build-tools;35.0.0" \
