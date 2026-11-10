@@ -30,9 +30,7 @@ jobs:
         with:
           gradle-version: '8.9'
 
-      # Do not use android-actions/setup-android@v3 here:
-      # this workflow previously failed because that action ran
-      # `sdkmanager tools`, a package no longer present in Google's SDK repository.
+      # Install Android SDK packages without the deprecated "tools" package.
       - name: Install required Android SDK packages
         shell: bash
         run: |
@@ -42,19 +40,21 @@ jobs:
             echo "Could not find sdkmanager under $ANDROID_HOME/cmdline-tools"
             exit 1
           fi
-          echo "Using: $SDKMANAGER"
-          set +o pipefail
-yes | "$SDKMANAGER" --licenses
-LICENSE_STATUS=${PIPESTATUS[1]}
-set -o pipefail
 
-if [ "$LICENSE_STATUS" -ne 0 ]; then
-  exit "$LICENSE_STATUS"
-fi
-          "$SDKMANAGER" --install \
-            "platforms;android-35" \
-            "build-tools;35.0.0" \
-            "ndk;27.0.12077973" \
+          echo "Using: $SDKMANAGER"
+          set +e
+          yes | "$SDKMANAGER" --licenses
+          LICENSE_STATUS=${PIPESTATUS[1]}
+          set -e
+
+          if [ "$LICENSE_STATUS" -ne 0 ]; then
+            exit "$LICENSE_STATUS"
+          fi
+
+          "$SDKMANAGER" --install \\
+            "platforms;android-35" \\
+            "build-tools;35.0.0" \\
+            "ndk;27.0.12077973" \\
             "cmake;3.22.1"
 
       - name: Build debug APK
